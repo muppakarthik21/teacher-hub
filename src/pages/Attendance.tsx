@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { formatInTimeZone } from 'date-fns-tz';
+import { saveAttendance } from '@/utils/localStorage';
 import { Clock, CheckCircle, MapPin, AlertTriangle } from 'lucide-react';
 
 const Attendance = () => {
@@ -37,6 +38,9 @@ const Attendance = () => {
         // Update user status in context
         updateUserStatus({ attendanceSubmitted: true });
         setHasMarkedAttendance(true);
+        
+        // Save to localStorage for dashboard
+        saveAttendance(user.id);
         
         const indiaTime = formatInTimeZone(new Date(), 'Asia/Kolkata', 'PPpp');
         

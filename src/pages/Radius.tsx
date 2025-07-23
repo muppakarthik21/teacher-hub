@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { formatInTimeZone } from 'date-fns-tz';
+import { saveRadius } from '@/utils/localStorage';
 import { MapPin, Save, CheckCircle, Loader2, AlertTriangle, Navigation } from 'lucide-react';
 
 // Institute location coordinates
@@ -133,6 +134,9 @@ const Radius = () => {
       if (success) {
         // Update user status in context
         updateUserStatus({ radiusSubmitted: true });
+        
+        // Save to localStorage for dashboard
+        saveRadius(user.id, calculatedDistance);
         
         setTodayRadius({ 
           radius: calculatedDistance, 

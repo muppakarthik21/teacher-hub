@@ -42,6 +42,21 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  // Refresh data when component mounts or becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        setRadiusHistory(getRadiusHistory(user.id));
+        setAttendanceHistory(getAttendanceHistory(user.id));
+        setTodayRadius(getTodayRadius(user.id));
+        setTodayAttendance(getTodayAttendance(user.id));
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
+
   const getWeeklyAttendance = () => {
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
