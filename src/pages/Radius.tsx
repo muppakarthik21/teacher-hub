@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTodayRadius, saveRadius } from '@/utils/localStorage';
+import { api } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { MapPin, Save, CheckCircle, Loader2, AlertTriangle, Navigation } from 'lucide-react';
 
@@ -44,9 +44,11 @@ const Radius = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      const existingRadius = getTodayRadius(user.id);
-      setTodayRadius(existingRadius);
+    if (user && user.radiusSubmitted) {
+      setTodayRadius({ 
+        radius: 'Already submitted', 
+        date: new Date().toISOString().split('T')[0] 
+      });
     }
   }, [user]);
 
@@ -125,17 +127,22 @@ const Radius = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
-      saveRadius(user.id, calculatedDistance);
-      setTodayRadius({ 
-        radius: calculatedDistance, 
-        date: new Date().toISOString().split('T')[0],
-        coordinates: currentLocation
-      });
+      const success = await api.saveRadius(user.id, user.name, calculatedDistance);
       
-      toast({
-        title: "Distance saved successfully!",
-        description: `Your distance of ${calculatedDistance}m has been recorded for today.`,
-      });
+      if (success) {
+        setTodayRadius({ 
+          radius: calculatedDistance, 
+          date: new Date().toISOString().split('T')[0],
+          coordinates: currentLocation
+        });
+        
+        toast({
+          title: "Distance saved successfully!",
+          description: `Your distance of ${calculatedDistance}m has been recorded for today.`,
+        });
+      } else {
+        throw new Error('Failed to save radius');
+      }
     } catch (error) {
       toast({
         variant: "destructive",

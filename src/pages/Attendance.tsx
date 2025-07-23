@@ -3,21 +3,21 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTodayRadius, getTodayAttendance, saveAttendance } from '@/utils/localStorage';
+import { api } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, CheckCircle, MapPin, AlertTriangle } from 'lucide-react';
 
 const Attendance = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [todayRadius, setTodayRadius] = useState<any>(null);
-  const [todayAttendance, setTodayAttendance] = useState<any>(null);
+  const [hasSubmittedRadius, setHasSubmittedRadius] = useState(false);
+  const [hasMarkedAttendance, setHasMarkedAttendance] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setTodayRadius(getTodayRadius(user.id));
-      setTodayAttendance(getTodayAttendance(user.id));
+      setHasMarkedAttendance(user.attendanceSubmitted);
+      setHasSubmittedRadius(user.radiusSubmitted);
     }
   }, [user]);
 
@@ -30,14 +30,19 @@ const Attendance = () => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     try {
-      saveAttendance(user.id);
-      const newAttendance = getTodayAttendance(user.id);
-      setTodayAttendance(newAttendance);
+      const success = await api.saveAttendance(user.id, user.name);
       
-      toast({
-        title: "Attendance marked successfully!",
-        description: `You have been marked present at ${newAttendance?.checkInTime}.`,
-      });
+      if (success) {
+        setHasMarkedAttendance(true);
+        const attendanceTime = new Date().toLocaleTimeString();
+        
+        toast({
+          title: "Attendance marked successfully!",
+          description: `Your attendance has been recorded for ${attendanceTime}.`,
+        });
+      } else {
+        throw new Error('Failed to save attendance');
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -49,7 +54,7 @@ const Attendance = () => {
     }
   };
 
-  const canMarkAttendance = todayRadius && !todayAttendance;
+  const canMarkAttendance = hasSubmittedRadius && !hasMarkedAttendance;
 
   return (
     <div className="p-6">
@@ -71,20 +76,20 @@ const Attendance = () => {
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
-          <Card className={`shadow-lg ${todayRadius ? 'border-success' : 'border-warning'}`}>
+          <Card className={`shadow-lg ${hasSubmittedRadius ? 'border-success' : 'border-warning'}`}>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <MapPin className={`h-6 w-6 ${todayRadius ? 'text-success' : 'text-warning'}`} />
-                <CardTitle className={todayRadius ? 'text-success' : 'text-warning'}>
+                <MapPin className={`h-6 w-6 ${hasSubmittedRadius ? 'text-success' : 'text-warning'}`} />
+                <CardTitle className={hasSubmittedRadius ? 'text-success' : 'text-warning'}>
                   Distance Status
                 </CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              {todayRadius ? (
+              {hasSubmittedRadius ? (
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-lg font-semibold">{todayRadius.radius}m</p>
+                    <p className="text-lg font-semibold">✓ Submitted</p>
                     <p className="text-sm text-muted-foreground">Distance recorded for today</p>
                   </div>
                   <CheckCircle className="h-8 w-8 text-success" />
@@ -108,7 +113,7 @@ const Attendance = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {todayAttendance ? (
+          {hasMarkedAttendance ? (
             <Card className="shadow-lg border-success">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -125,7 +130,7 @@ const Attendance = () => {
                     ✓ Present
                   </div>
                   <p className="text-lg mb-2">
-                    Checked in at {todayAttendance.checkInTime}
+                    Attendance marked for today
                   </p>
                   <p className="text-muted-foreground">
                     {new Date().toLocaleDateString()}
@@ -147,7 +152,7 @@ const Attendance = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {!todayRadius ? (
+                {!hasSubmittedRadius ? (
                   <div className="text-center py-8">
                     <AlertTriangle className="h-16 w-16 text-warning mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Distance Required</h3>
@@ -177,7 +182,7 @@ const Attendance = () => {
                         Attendance Requirements:
                       </h4>
                       <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                        <li>✓ Distance recorded: {todayRadius.radius}m</li>
+                        <li>✓ Distance recorded for today</li>
                         <li>✓ Within working hours</li>
                         <li>✓ One-time daily marking</li>
                       </ul>

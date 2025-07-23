@@ -14,7 +14,8 @@ const Login = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    username: '',
+    employeeId: '',
+    contactNumber: '',
     password: ''
   });
   const { login, register, isLoading } = useAuth();
@@ -25,7 +26,7 @@ const Login = () => {
     e.preventDefault();
     
     if (isLogin) {
-      const success = await login(formData.username, formData.password);
+      const success = await login(formData.email, formData.password);
       if (success) {
         toast({
           title: "Welcome back!",
@@ -40,7 +41,7 @@ const Login = () => {
         });
       }
     } else {
-      const success = await register(formData.name, formData.email, formData.username, formData.password);
+      const success = await register(formData.name, formData.email, formData.employeeId, formData.contactNumber, formData.password);
       if (success) {
         toast({
           title: "Account created!",
@@ -119,18 +120,42 @@ const Login = () => {
                       placeholder="Enter your email"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="employeeId">Employee ID</Label>
+                    <Input
+                      id="employeeId"
+                      name="employeeId"
+                      type="text"
+                      value={formData.employeeId}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Enter your employee ID"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactNumber">Contact Number</Label>
+                    <Input
+                      id="contactNumber"
+                      name="contactNumber"
+                      type="tel"
+                      value={formData.contactNumber}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Enter your contact number"
+                    />
+                  </div>
                 </>
               )}
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="email">{isLogin ? 'Email' : 'Confirm Email'}</Label>
                 <Input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={formData.username}
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
                   onChange={handleInputChange}
                   required
-                  placeholder={isLogin ? "Enter username (try: john, sarah, michael)" : "Choose a username"}
+                  placeholder={isLogin ? "Enter your email" : "Confirm your email"}
                 />
               </div>
               <div className="space-y-2">
@@ -174,9 +199,9 @@ const Login = () => {
             
             {isLogin && (
               <div className="text-center text-sm text-muted-foreground">
-                <p className="font-medium">Demo Credentials:</p>
-                <p>Username: john, sarah, or michael</p>
-                <p>Password: password123</p>
+                <p className="font-medium">Note:</p>
+                <p>Use your registered email and password to login</p>
+                <p>Or register a new account first</p>
               </div>
             )}
           </CardContent>

@@ -4,25 +4,23 @@ interface User {
   id: string;
   name: string;
   email: string;
-  username: string;
+  employeeId: string;
+  contactNumber: string;
+  radiusSubmitted: boolean;
+  attendanceSubmitted: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, username: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, employeeId: string, contactNumber: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dummy credentials
-const DUMMY_USERS = [
-  { id: '1', name: 'John Smith', email: 'john@school.edu', username: 'john', password: 'password123' },
-  { id: '2', name: 'Sarah Johnson', email: 'sarah@school.edu', username: 'sarah', password: 'password123' },
-  { id: '3', name: 'Michael Brown', email: 'michael@school.edu', username: 'michael', password: 'password123' }
-];
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -36,45 +34,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const foundUser = DUMMY_USERS.find(u => u.username === username && u.password === password);
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-      setIsLoading(false);
-      return true;
-    }
-    setIsLoading(false);
-    return false;
-  };
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-  const register = async (name: string, email: string, username: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if username already exists
-    const existingUser = DUMMY_USERS.find(u => u.username === username);
-    if (existingUser) {
+      const data = await response.json();
+
+      if (data.success && data.teacher) {
+        setUser(data.teacher);
+        localStorage.setItem('currentUser', JSON.stringify(data.teacher));
+        setIsLoading(false);
+        return true;
+      }
+      
+      setIsLoading(false);
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
       setIsLoading(false);
       return false;
     }
+  };
 
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      username
-    };
+  const register = async (name: string, email: string, employeeId: string, contactNumber: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
     
-    setUser(newUser);
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    setIsLoading(false);
-    return true;
+    try {
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, employeeId, contactNumber, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsLoading(false);
+        return true;
+      }
+      
+      setIsLoading(false);
+      return false;
+    } catch (error) {
+      console.error('Registration error:', error);
+      setIsLoading(false);
+      return false;
+    }
   };
 
   const logout = () => {
