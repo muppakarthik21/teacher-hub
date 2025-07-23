@@ -95,8 +95,21 @@ router.post('/login', async (req, res) => {
 router.post('/radius-logs', async (req, res) => {
   const { teacherId, teacherName, radius, timestamp } = req.body;
 
+  // Validate radius
+  if (radius > 700) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Distance exceeds maximum allowed radius of 700 meters' 
+    });
+  }
+
   try {
-    const mysqlTimestamp = new Date(timestamp).toISOString().slice(0, 19).replace('T', ' ');
+    // Convert to India time (UTC+5:30) for database storage
+    const indiaTime = new Date(timestamp);
+    indiaTime.setHours(indiaTime.getHours() + 5);
+    indiaTime.setMinutes(indiaTime.getMinutes() + 30);
+    const mysqlTimestamp = indiaTime.toISOString().slice(0, 19).replace('T', ' ');
+    
     const connection = await db.promise().getConnection();
     
     await connection.beginTransaction();
@@ -131,7 +144,12 @@ router.post('/attendance', async (req, res) => {
   const { teacherId, teacherName, timestamp } = req.body;
 
   try {
-    const mysqlTimestamp = new Date(timestamp).toISOString().slice(0, 19).replace('T', ' ');
+    // Convert to India time (UTC+5:30) for database storage
+    const indiaTime = new Date(timestamp);
+    indiaTime.setHours(indiaTime.getHours() + 5);
+    indiaTime.setMinutes(indiaTime.getMinutes() + 30);
+    const mysqlTimestamp = indiaTime.toISOString().slice(0, 19).replace('T', ' ');
+    
     const connection = await db.promise().getConnection();
     
     await connection.beginTransaction();

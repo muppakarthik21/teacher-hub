@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
+import { formatInTimeZone } from 'date-fns-tz';
 import { MapPin, Save, CheckCircle, Loader2, AlertTriangle, Navigation } from 'lucide-react';
 
 // Institute location coordinates
@@ -34,7 +35,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 };
 
 const Radius = () => {
-  const { user } = useAuth();
+  const { user, updateUserStatus } = useAuth();
   const { toast } = useToast();
   const [todayRadius, setTodayRadius] = useState<any>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -130,15 +131,20 @@ const Radius = () => {
       const success = await api.saveRadius(user.id, user.name, calculatedDistance);
       
       if (success) {
+        // Update user status in context
+        updateUserStatus({ radiusSubmitted: true });
+        
         setTodayRadius({ 
           radius: calculatedDistance, 
           date: new Date().toISOString().split('T')[0],
           coordinates: currentLocation
         });
         
+        const indiaTime = formatInTimeZone(new Date(), 'Asia/Kolkata', 'PPpp');
+        
         toast({
           title: "Distance saved successfully!",
-          description: `Your distance of ${calculatedDistance}m has been recorded for today.`,
+          description: `Your distance of ${calculatedDistance}m has been recorded at ${indiaTime}.`,
         });
       } else {
         throw new Error('Failed to save radius');

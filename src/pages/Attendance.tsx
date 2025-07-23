@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
+import { formatInTimeZone } from 'date-fns-tz';
 import { Clock, CheckCircle, MapPin, AlertTriangle } from 'lucide-react';
 
 const Attendance = () => {
-  const { user } = useAuth();
+  const { user, updateUserStatus } = useAuth();
   const { toast } = useToast();
   const [hasSubmittedRadius, setHasSubmittedRadius] = useState(false);
   const [hasMarkedAttendance, setHasMarkedAttendance] = useState(false);
@@ -33,12 +34,15 @@ const Attendance = () => {
       const success = await api.saveAttendance(user.id, user.name);
       
       if (success) {
+        // Update user status in context
+        updateUserStatus({ attendanceSubmitted: true });
         setHasMarkedAttendance(true);
-        const attendanceTime = new Date().toLocaleTimeString();
+        
+        const indiaTime = formatInTimeZone(new Date(), 'Asia/Kolkata', 'PPpp');
         
         toast({
           title: "Attendance marked successfully!",
-          description: `Your attendance has been recorded for ${attendanceTime}.`,
+          description: `Your attendance has been recorded at ${indiaTime}.`,
         });
       } else {
         throw new Error('Failed to save attendance');
@@ -173,7 +177,7 @@ const Attendance = () => {
                       <Clock className="h-16 w-16 text-primary mx-auto mb-4" />
                       <h3 className="text-xl font-semibold mb-2">Ready to Mark Attendance</h3>
                       <p className="text-muted-foreground">
-                        Current time: {new Date().toLocaleTimeString()}
+                        Current time: {formatInTimeZone(new Date(), 'Asia/Kolkata', 'pp')}
                       </p>
                     </div>
 
