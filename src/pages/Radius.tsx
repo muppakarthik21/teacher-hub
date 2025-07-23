@@ -1,20 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTodayRadius, saveRadius } from '@/utils/localStorage';
 import { useToast } from '@/hooks/use-toast';
-import { MapPin, Save, CheckCircle } from 'lucide-react';
+import { MapPin, Save, CheckCircle, Loader2, AlertTriangle, Navigation } from 'lucide-react';
+
+// Institute location coordinates
+const INSTITUTE_LOCATION = {
+  lat: 17.435019,
+  lng: 78.392648,
+  address: "Vishnu Kalpa, Amar Co-Operative Society, Madhapur, Hyderabad, Telangana 500033"
+};
+
+const MAX_RADIUS = 700; // 700 meters
+
+// Function to calculate distance between two coordinates using Haversine formula
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  const distance = R * c;
+  return Math.round(distance);
+};
 
 const Radius = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [radius, setRadius] = useState('');
   const [todayRadius, setTodayRadius] = useState<any>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -23,16 +50,71 @@ const Radius = () => {
     }
   }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !radius) return;
+  const getCurrentLocation = () => {
+    setIsGettingLocation(true);
+    setLocationError(null);
 
-    const radiusValue = parseInt(radius);
-    if (isNaN(radiusValue) || radiusValue < 0) {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser.");
+      setIsGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCurrentLocation({ lat: latitude, lng: longitude });
+        
+        const distance = calculateDistance(
+          latitude, 
+          longitude, 
+          INSTITUTE_LOCATION.lat, 
+          INSTITUTE_LOCATION.lng
+        );
+        
+        setCalculatedDistance(distance);
+        setIsGettingLocation(false);
+
+        if (distance > MAX_RADIUS) {
+          toast({
+            variant: "destructive",
+            title: "Outside allowed radius",
+            description: `You are ${distance}m away from the institute. Maximum allowed distance is ${MAX_RADIUS}m.`,
+          });
+        }
+      },
+      (error) => {
+        let errorMessage = "Failed to get your location.";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out.";
+            break;
+        }
+        setLocationError(errorMessage);
+        setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!user || calculatedDistance === null) return;
+
+    if (calculatedDistance > MAX_RADIUS) {
       toast({
         variant: "destructive",
-        title: "Invalid radius",
-        description: "Please enter a valid positive number.",
+        title: "Cannot save distance",
+        description: `You are outside the allowed radius of ${MAX_RADIUS}m.`,
       });
       return;
     }
@@ -43,19 +125,22 @@ const Radius = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
-      saveRadius(user.id, radiusValue);
-      setTodayRadius({ radius: radiusValue, date: new Date().toISOString().split('T')[0] });
-      setRadius('');
+      saveRadius(user.id, calculatedDistance);
+      setTodayRadius({ 
+        radius: calculatedDistance, 
+        date: new Date().toISOString().split('T')[0],
+        coordinates: currentLocation
+      });
       
       toast({
-        title: "Radius saved successfully!",
-        description: `Your distance of ${radiusValue}m has been recorded for today.`,
+        title: "Distance saved successfully!",
+        description: `Your distance of ${calculatedDistance}m has been recorded for today.`,
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save radius. Please try again.",
+        description: "Failed to save distance. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -71,9 +156,32 @@ const Radius = () => {
         className="max-w-2xl mx-auto"
       >
         <div className="flex items-center gap-3 mb-6">
-          <MapPin className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Distance Input</h1>
+          <Navigation className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold">Location Tracking</h1>
         </div>
+
+        {/* Institute Location Info */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <Card className="border-primary/20">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Institute Location</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{INSTITUTE_LOCATION.address}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Maximum allowed distance: {MAX_RADIUS} meters
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {todayRadius ? (
           <motion.div
@@ -88,7 +196,7 @@ const Radius = () => {
                   <CardTitle className="text-success">Distance Already Recorded</CardTitle>
                 </div>
                 <CardDescription>
-                  You have already set your distance for today
+                  You have already recorded your distance for today
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -102,7 +210,7 @@ const Radius = () => {
                 </div>
                 <div className="bg-muted p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground text-center">
-                    You can only set your distance once per day. Come back tomorrow to update it.
+                    You can only record your location once per day. Come back tomorrow to update it.
                   </p>
                 </div>
               </CardContent>
@@ -116,66 +224,121 @@ const Radius = () => {
           >
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle>Set Your Distance</CardTitle>
+                <CardTitle>Track Your Location</CardTitle>
                 <CardDescription>
-                  Enter your current distance from the institute in meters (once per day)
+                  Click the button below to automatically detect your distance from the institute
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="radius">Distance (meters)</Label>
-                    <Input
-                      id="radius"
-                      type="number"
-                      value={radius}
-                      onChange={(e) => setRadius(e.target.value)}
-                      placeholder="Enter distance in meters (e.g., 500)"
-                      required
-                      min="0"
-                      className="text-lg"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      This helps track your proximity to the institute for attendance verification
-                    </p>
-                  </div>
-
-                  <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                      Distance Guidelines:
-                    </h3>
-                    <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                      <li>• 0-100m: On campus</li>
-                      <li>• 100-500m: Very close to institute</li>
-                      <li>• 500-1000m: Walking distance</li>
-                      <li>• 1000+m: Requires transportation</li>
-                    </ul>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isSubmitting || !radius}
-                    style={{ background: 'var(--gradient-primary)' }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Save className="mr-2 h-4 w-4 animate-spin" />
-                        Saving Distance...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Distance
-                      </>
+              <CardContent className="space-y-6">
+                {!currentLocation ? (
+                  <div className="text-center">
+                    <Button 
+                      onClick={getCurrentLocation}
+                      disabled={isGettingLocation}
+                      className="w-full"
+                      style={{ background: 'var(--gradient-primary)' }}
+                    >
+                      {isGettingLocation ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Getting Your Location...
+                        </>
+                      ) : (
+                        <>
+                          <Navigation className="mr-2 h-4 w-4" />
+                          Get My Location
+                        </>
+                      )}
+                    </Button>
+                    
+                    {locationError && (
+                      <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-destructive" />
+                          <p className="text-sm text-destructive">{locationError}</p>
+                        </div>
+                      </div>
                     )}
-                  </Button>
-                </form>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-center p-6 bg-muted rounded-lg">
+                      <div className="text-3xl font-bold mb-2">
+                        {calculatedDistance}m
+                      </div>
+                      <p className="text-muted-foreground">
+                        Distance from institute
+                      </p>
+                      {calculatedDistance && calculatedDistance <= MAX_RADIUS && (
+                        <p className="text-success text-sm mt-2">
+                          ✓ Within allowed radius
+                        </p>
+                      )}
+                      {calculatedDistance && calculatedDistance > MAX_RADIUS && (
+                        <p className="text-destructive text-sm mt-2">
+                          ✗ Outside allowed radius
+                        </p>
+                      )}
+                    </div>
 
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Once set, you cannot change today's distance. Make sure the value is accurate.
-                  </p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-muted-foreground">Your Location</p>
+                        <p className="font-medium">
+                          {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-muted-foreground">Institute Location</p>
+                        <p className="font-medium">
+                          {INSTITUTE_LOCATION.lat}, {INSTITUTE_LOCATION.lng}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={getCurrentLocation}
+                        disabled={isGettingLocation}
+                        className="flex-1"
+                      >
+                        <Navigation className="mr-2 h-4 w-4" />
+                        Refresh Location
+                      </Button>
+                      
+                      <Button 
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || calculatedDistance === null || calculatedDistance > MAX_RADIUS}
+                        className="flex-1"
+                        style={{ background: 'var(--gradient-primary)' }}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" />
+                            Save Distance
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                    Distance Guidelines:
+                  </h3>
+                  <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                    <li>• 0-100m: On campus</li>
+                    <li>• 100-500m: Very close to institute</li>
+                    <li>• 500-700m: Within allowed range</li>
+                    <li>• 700+m: <span className="text-destructive font-medium">Outside allowed radius</span></li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
