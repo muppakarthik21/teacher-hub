@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const query = 'SELECT *, radius_submitted, attendance_submitted FROM teachers WHERE email = ? AND password = ?';
+    const query = 'SELECT * FROM teachers WHERE email = ? AND password = ?';
     const [rows] = await db.promise().query(query, [email, password]);
 
     if (rows.length === 0) {
@@ -65,6 +65,14 @@ router.post('/login', async (req, res) => {
     }
 
     const teacher = rows[0];
+    
+    // Check if submissions were made today
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const radiusSubmitted = teacher.last_radius_check && 
+      teacher.last_radius_check.toISOString().split('T')[0] === today;
+    const attendanceSubmitted = teacher.last_attendance_time && 
+      teacher.last_attendance_time.toISOString().split('T')[0] === today;
+
     res.status(200).json({
       success: true,
       teacher: {
@@ -73,8 +81,8 @@ router.post('/login', async (req, res) => {
         email: teacher.email,
         employeeId: teacher.employee_id,
         contactNumber: teacher.contact_number,
-        radiusSubmitted: Boolean(teacher.radius_submitted),
-        attendanceSubmitted: Boolean(teacher.attendance_submitted)
+        radiusSubmitted: Boolean(radiusSubmitted),
+        attendanceSubmitted: Boolean(attendanceSubmitted)
       }
     });
   } catch (error) {
@@ -99,9 +107,9 @@ router.post('/radius-logs', async (req, res) => {
         [teacherId, teacherName, radius, mysqlTimestamp]
       );
 
-      // Update teacher's radius status AND last_radius_check time
+      // Update teacher's last_radius_check time
       await connection.query(
-        'UPDATE teachers SET radius_submitted = TRUE, last_radius_check = ? WHERE id = ?',
+        'UPDATE teachers SET last_radius_check = ? WHERE id = ?',
         [mysqlTimestamp, teacherId]
       );
 
@@ -134,9 +142,9 @@ router.post('/attendance', async (req, res) => {
         [teacherId, teacherName, mysqlTimestamp]
       );
 
-      // Update teacher's attendance status AND last_attendance_time
+      // Update teacher's last_attendance_time
       await connection.query(
-        'UPDATE teachers SET attendance_submitted = TRUE, last_attendance_time = ? WHERE id = ?',
+        'UPDATE teachers SET last_attendance_time = ? WHERE id = ?',
         [mysqlTimestamp, teacherId]
       );
 
