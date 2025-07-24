@@ -1,3 +1,4 @@
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,35 +15,45 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  return (
-    <div className="flex min-h-screen bg-background">
-      <Navigation />
-      <main className="flex-1 overflow-auto">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/radius" element={<Radius />} />
-          <Route path="/attendance" element={<Attendance />} />
-          <Route path="/timetable" element={<Timetable />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-    </div>
+  return React.createElement(
+    'div',
+    { className: "flex min-h-screen bg-background" },
+    React.createElement(Navigation),
+    React.createElement(
+      'main',
+      { className: "flex-1 overflow-auto" },
+      React.createElement(
+        Routes,
+        null,
+        React.createElement(Route, { path: "/", element: React.createElement(Dashboard) }),
+        React.createElement(Route, { path: "/dashboard", element: React.createElement(Dashboard) }),
+        React.createElement(Route, { path: "/radius", element: React.createElement(Radius) }),
+        React.createElement(Route, { path: "/attendance", element: React.createElement(Attendance) }),
+        React.createElement(Route, { path: "/timetable", element: React.createElement(Timetable) }),
+        React.createElement(Route, { path: "*", element: React.createElement(NotFound) })
+      )
+    )
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+const App = () => React.createElement(
+  QueryClientProvider,
+  { client: queryClient },
+  React.createElement(
+    TooltipProvider,
+    null,
+    React.createElement(Toaster),
+    React.createElement(Sonner),
+    React.createElement(
+      BrowserRouter,
+      null,
+      React.createElement(
+        AuthProvider,
+        null,
+        React.createElement(AppContent)
+      )
+    )
+  )
 );
 
 export default App;
