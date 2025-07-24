@@ -200,7 +200,7 @@ const Attendance = () => {
                       onClick={handleMarkAttendance}
                       className="w-full" 
                       disabled={isSubmitting || !canMarkAttendance}
-                      style={{ background: 'var(--gradient-success)' }}
+                      style={{ background: 'black' }}
                     >
                       {isSubmitting ? (
                         <>
