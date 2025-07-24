@@ -7,21 +7,15 @@ import {
   BarChart3, 
   MapPin, 
   Clock, 
-  Calendar, 
-  LogOut, 
+  Calendar,
   User,
   GraduationCap 
 } from 'lucide-react';
 
 const Navigation = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -93,17 +87,6 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Logout Button */}
-      <div className="p-4 border-t">
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-3 hover:bg-destructive hover:text-destructive-foreground"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-4 w-4" />
-          Logout
-        </Button>
-      </div>
     </motion.nav>
   );
 };
