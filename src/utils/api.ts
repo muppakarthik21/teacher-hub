@@ -1,23 +1,11 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { saveRadius as saveRadiusToStorage, saveAttendance as saveAttendanceToStorage } from './localStorage';
 
 export const api = {
   async saveRadius(teacherId: string, teacherName: string, radius: number) {
     try {
-      const response = await fetch(`${API_BASE_URL}/radius-logs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          teacherId,
-          teacherName,
-          radius,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-
-      const data = await response.json();
-      return data.success;
+      // Save to localStorage instead of backend
+      saveRadiusToStorage(teacherId, radius);
+      return true;
     } catch (error) {
       console.error('Error saving radius:', error);
       return false;
@@ -26,20 +14,9 @@ export const api = {
 
   async saveAttendance(teacherId: string, teacherName: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/attendance`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          teacherId,
-          teacherName,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-
-      const data = await response.json();
-      return data.success;
+      // Save to localStorage instead of backend
+      saveAttendanceToStorage(teacherId);
+      return true;
     } catch (error) {
       console.error('Error saving attendance:', error);
       return false;
