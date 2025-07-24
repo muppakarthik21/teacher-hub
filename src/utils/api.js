@@ -1,7 +1,7 @@
 import { saveRadius as saveRadiusToStorage, saveAttendance as saveAttendanceToStorage } from './localStorage';
 
 export const api = {
-  async saveRadius(teacherId: string, teacherName: string, radius: number) {
+  async saveRadius(teacherId, teacherName, radius) {
     try {
       // Save to localStorage instead of backend
       saveRadiusToStorage(teacherId, radius);
@@ -12,7 +12,7 @@ export const api = {
     }
   },
 
-  async saveAttendance(teacherId: string, teacherName: string) {
+  async saveAttendance(teacherId, teacherName) {
     try {
       // Save to localStorage instead of backend
       saveAttendanceToStorage(teacherId);
