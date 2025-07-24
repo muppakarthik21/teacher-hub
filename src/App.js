@@ -6,11 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Navigation from "./components/Navigation";
-import Dashboard from "./pages/Dashboard";
-import Radius from "./pages/Radius";
-import Attendance from "./pages/Attendance";
-import Timetable from "./pages/Timetable";
-import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard.jsx";
+import Radius from "./pages/Radius.jsx";
+import Attendance from "./pages/Attendance.jsx";
+import Timetable from "./pages/Timetable.jsx";
+import NotFound from "./pages/NotFound.js";
 
 const queryClient = new QueryClient();
 
