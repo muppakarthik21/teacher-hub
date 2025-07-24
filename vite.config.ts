@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      include: /\.(jsx|tsx|js|ts)$/,
+    })
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -11,5 +15,10 @@ export default defineConfig({
   },
   server: {
     port: 8080
+  },
+  esbuild: {
+    include: /\.(jsx|tsx|js|ts)$/,
+    exclude: [],
+    loader: 'jsx',
   }
 })
