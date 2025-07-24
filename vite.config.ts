@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     react({
       include: "**/*.{jsx,tsx,js,ts}",
+      jsxRuntime: 'automatic',
     })
   ],
   resolve: {
@@ -16,12 +17,21 @@ export default defineConfig({
   server: {
     port: 8080
   },
+  build: {
+    rollupOptions: {
+      external: [],
+      output: {
+        format: 'es'
+      }
+    }
+  },
   esbuild: {
+    jsx: 'automatic',
     include: /\.(jsx?|tsx?)$/,
-    loader: 'jsx',
   },
   optimizeDeps: {
     esbuildOptions: {
+      jsx: 'automatic',
       loader: {
         '.js': 'jsx'
       }
