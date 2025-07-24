@@ -19,7 +19,7 @@ const INSTITUTE_LOCATION = {
 const MAX_RADIUS = 700; // 700 meters
 
 // Function to calculate distance between two coordinates using Haversine formula
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371e3; // Earth's radius in meters
   const φ1 = lat1 * Math.PI / 180;
   const φ2 = lat2 * Math.PI / 180;
@@ -38,12 +38,12 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 const Radius = () => {
   const { user, updateUserStatus } = useAuth();
   const { toast } = useToast();
-  const [todayRadius, setTodayRadius] = useState<any>(null);
+  const [todayRadius, setTodayRadius] = useState(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [calculatedDistance, setCalculatedDistance] = useState(null);
+  const [locationError, setLocationError] = useState(null);
 
   useEffect(() => {
     if (user && user.radiusSubmitted) {

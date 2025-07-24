@@ -1,24 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  employeeId: string;
-  contactNumber: string;
-  radiusSubmitted: boolean;
-  attendanceSubmitted: boolean;
-}
+const AuthContext = createContext(undefined);
 
-interface AuthContextType {
-  user: User | null;
-  updateUserStatus: (updates: Partial<User>) => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>({
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState({
     id: 'default-user',
     name: 'Teacher',
     email: 'teacher@school.com',
@@ -28,7 +13,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     attendanceSubmitted: false
   });
 
-  const updateUserStatus = (updates: Partial<User>) => {
+  const updateUserStatus = (updates) => {
     if (user) {
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);

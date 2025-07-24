@@ -7,14 +7,14 @@ import { Calendar, Clock, BookOpen, Users } from 'lucide-react';
 
 const Timetable = () => {
   const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
-  const [viewMode, setViewMode] = useState<'today' | 'weekly'>('today');
+  const [viewMode, setViewMode] = useState('today');
 
   const allTimetable = getTimetable();
   const todayTimetable = getTodayTimetable();
   
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   
-  const getScheduleForDay = (day: string) => {
+  const getScheduleForDay = (day) => {
     return allTimetable.filter(entry => entry.day === day);
   };
 

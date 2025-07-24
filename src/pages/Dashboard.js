@@ -28,10 +28,10 @@ ChartJS.register(
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [radiusHistory, setRadiusHistory] = useState<any[]>([]);
-  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
-  const [todayRadius, setTodayRadius] = useState<any>(null);
-  const [todayAttendance, setTodayAttendance] = useState<any>(null);
+  const [radiusHistory, setRadiusHistory] = useState([]);
+  const [attendanceHistory, setAttendanceHistory] = useState([]);
+  const [todayRadius, setTodayRadius] = useState(null);
+  const [todayAttendance, setTodayAttendance] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -127,7 +127,7 @@ const Dashboard = () => {
     responsive: true,
     plugins: {
       legend: {
-        position: 'bottom' as const,
+        position: 'bottom',
       },
     },
   };
